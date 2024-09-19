@@ -6,6 +6,7 @@ import 'package:music_app/ui/settings/settings.dart';
 import 'package:music_app/ui/user/user.dart';
 
 import '../../data/model/song.dart';
+import '../now_playing/playing.dart';
 
 class MusicApp extends StatelessWidget {
   const MusicApp({super.key});
@@ -18,7 +19,8 @@ class MusicApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: MusicHomePage(),
+      home: const MusicHomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
@@ -45,7 +47,10 @@ class _MusicHomePageState extends State<MusicHomePage> {
         middle: Text('Music App'),
       ),
       child: CupertinoTabScaffold(
-        tabBar: CupertinoTabBar(backgroundColor: Theme.of(context).colorScheme.inverseSurface, items: [
+        tabBar: CupertinoTabBar(backgroundColor: Theme
+            .of(context)
+            .colorScheme
+            .inverseSurface, items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.album), label: 'Discovery'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Account'),
@@ -147,6 +152,44 @@ class _HomeTabPageState extends State<HomeTabPage> {
       });
     });
   }
+
+  void showBottomSheet() {
+    showModalBottomSheet(context: context, builder: (context) {
+      return ClipRRect(
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+        child: Container(
+          height: 400,
+          color: Colors.grey,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                const Text('Model Bottom Sheet'),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Close Bottom Sheet'),
+                )
+              ],
+            ),
+          )
+        ),
+      );
+    });
+  }
+
+  void navigate(Song song) {
+    Navigator.push(context,
+        CupertinoPageRoute(builder: (context) {
+          return NowPlaying(
+            // list songs
+            songs: songs,
+            // song playing (to next, previous, pause)
+            playingSong: song,
+          );
+        })
+    );
+  }
 }
 
 class _SongItemSection extends StatelessWidget {
@@ -184,9 +227,14 @@ class _SongItemSection extends StatelessWidget {
       title: Text(song.title),
       subtitle: Text(song.artist),
       trailing: IconButton(
-        onPressed: () {},
+        onPressed: () {
+          parent.showBottomSheet();
+        },
         icon: const Icon(Icons.more_horiz),
       ),
+      onTap: () {
+        parent.navigate(song);
+      },
     );
   }
 }
