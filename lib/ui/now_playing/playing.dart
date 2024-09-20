@@ -43,17 +43,23 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     with SingleTickerProviderStateMixin {
   late AnimationController _imageAnimController;
   late AudioPlayerManager _audioPlayerManager;
+  // vị trí hiện tại của bài hát trong danh sách bài hát
+  late int _selectedItemIndex;
+  late Song _song;
+  late double _currentAnimationPosition;
 
   @override
   void initState() {
     super.initState();
+    _currentAnimationPosition = 0.0;
+    _song = widget.playingSong;
     _imageAnimController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 120000),
     );
-    _audioPlayerManager =
-        AudioPlayerManager(songUrl: widget.playingSong.source);
+    _audioPlayerManager = AudioPlayerManager(songUrl: _song.source);
     _audioPlayerManager.init();
+    _selectedItemIndex = widget.songs.indexOf(widget.playingSong);
   }
 
   @override
@@ -79,7 +85,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(widget.playingSong.album),
+                Text(_song.album),
                 const SizedBox(
                   height: 16,
                 ),
@@ -96,7 +102,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                     borderRadius: BorderRadius.circular(radius),
                     child: FadeInImage.assetNetwork(
                       placeholder: 'assets/itunes.png',
-                      image: widget.playingSong.image,
+                      image: _song.image,
                       width: screenWidth - delta,
                       height: screenWidth - delta,
                       imageErrorBuilder: (context, error, stackTrace) {
@@ -127,7 +133,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                         Column(
                           children: [
                             Text(
-                              widget.playingSong.title,
+                              _song.title,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
@@ -139,7 +145,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              widget.playingSong.artist,
+                              _song.artist,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
@@ -189,6 +195,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   @override
   void dispose() {
     _audioPlayerManager.dispose();
+    _imageAnimController.dispose();
     super.dispose();
   }
 
@@ -197,21 +204,21 @@ class _NowPlayingPageState extends State<NowPlayingPage>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          const MediaButtonControl(
+          MediaButtonControl(
             function: null,
             icon: Icons.shuffle,
             color: Colors.purple,
             size: 24,
           ),
-          const MediaButtonControl(
-            function: null,
+          MediaButtonControl(
+            function: _setPrevSong,
             icon: Icons.skip_previous,
             color: Colors.purple,
             size: 36,
           ),
           _playButton(),
-          const MediaButtonControl(
-            function: null,
+          MediaButtonControl(
+            function: _setNextSong,
             icon: Icons.skip_next,
             color: Colors.purple,
             size: 36,
@@ -261,6 +268,9 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         final playing = playState?.playing;
         if (processingState == ProcessingState.loading ||
             processingState == ProcessingState.buffering) {
+          // todo: pause animation
+          _pauseRotationAnim();
+
           return Container(
             margin: const EdgeInsets.all(8),
             width: 48,
@@ -270,6 +280,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         } else if (playing != true) {
           return MediaButtonControl(
             function: () {
+              // todo: start or resume animation
               _audioPlayerManager.player.play();
             },
             icon: Icons.play_arrow,
@@ -277,18 +288,32 @@ class _NowPlayingPageState extends State<NowPlayingPage>
             size: 48,
           );
         } else if (processingState != ProcessingState.completed) {
+          _playRotationAnim();
+
+          // todo
           return MediaButtonControl(
             function: () {
+              // todo: stop animation, save current position value for resume
               _audioPlayerManager.player.pause();
+              _pauseRotationAnim();
             },
             icon: Icons.pause,
             color: null,
             size: 48,
           );
         } else {
+          // todo: if song completed -> stop and reset animation
+          if (processingState == ProcessingState.completed) {
+            _stopRotationAnim();
+            _resetRotationAnim();
+          }
           return MediaButtonControl(
             function: () {
+              // todo: start animation
+
               _audioPlayerManager.player.seek(Duration.zero);
+              _resetRotationAnim();
+              _playRotationAnim();
             },
             icon: Icons.replay,
             color: null,
@@ -297,6 +322,47 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         }
       },
     );
+  }
+
+  void _setNextSong() {
+    ++_selectedItemIndex;
+    final nextSong = widget.songs[_selectedItemIndex];
+    _audioPlayerManager.updateSongUrl(nextSong.source);
+    _resetRotationAnim();
+    // _playRotationAnim();
+    setState(() {
+      _song = nextSong;
+    });
+  }
+
+  void _setPrevSong() {
+    --_selectedItemIndex;
+    final nextSong = widget.songs[_selectedItemIndex];
+    _audioPlayerManager.updateSongUrl(nextSong.source);
+    _resetRotationAnim();
+    // _playRotationAnim();
+    setState(() {
+      _song = nextSong;
+    });
+  }
+
+  void _playRotationAnim() {
+    _imageAnimController.forward(from: _currentAnimationPosition);
+    _imageAnimController.repeat();
+  }
+
+  void _pauseRotationAnim() {
+    _stopRotationAnim();
+    _currentAnimationPosition = _imageAnimController.value;
+  }
+
+  void _stopRotationAnim() {
+    _imageAnimController.stop();
+  }
+
+  void _resetRotationAnim() {
+    _currentAnimationPosition = 0.0;
+    _imageAnimController.value = _currentAnimationPosition;
   }
 }
 
