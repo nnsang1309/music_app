@@ -9,6 +9,6 @@ class SettingsTab extends StatelessWidget {
       body: Center(
         child: Text('Settings Tab') ,
       ),
-    );;
+    );
   }
 }
