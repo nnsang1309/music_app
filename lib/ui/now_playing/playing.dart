@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:audio_video_progress_bar/audio_video_progress_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -39,14 +41,15 @@ class NowPlayingPage extends StatefulWidget {
   State<NowPlayingPage> createState() => _NowPlayingPageState();
 }
 
-class _NowPlayingPageState extends State<NowPlayingPage>
-    with SingleTickerProviderStateMixin {
+class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProviderStateMixin {
   late AnimationController _imageAnimController;
   late AudioPlayerManager _audioPlayerManager;
+
   // vị trí hiện tại của bài hát trong danh sách bài hát
   late int _selectedItemIndex;
   late Song _song;
   late double _currentAnimationPosition;
+  bool _isShuffle = false;
 
   @override
   void initState() {
@@ -96,8 +99,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
 
                 // ---- Anh bai hat xoay vong
                 RotationTransition(
-                  turns:
-                      Tween(begin: 0.0, end: 1.0).animate(_imageAnimController),
+                  turns: Tween(begin: 0.0, end: 1.0).animate(_imageAnimController),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(radius),
                     child: FadeInImage.assetNetwork(
@@ -137,11 +139,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .color),
+                                  .copyWith(color: Theme.of(context).textTheme.bodyMedium!.color),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -149,11 +147,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium!
-                                          .color),
+                                  .copyWith(color: Theme.of(context).textTheme.bodyMedium!.color),
                             ),
                           ],
                         ),
@@ -205,9 +199,9 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           MediaButtonControl(
-            function: null,
+            function: _setShuffle,
             icon: Icons.shuffle,
-            color: Colors.purple,
+            color: _getShuffleColor(),
             size: 24,
           ),
           MediaButtonControl(
@@ -266,8 +260,7 @@ class _NowPlayingPageState extends State<NowPlayingPage>
         final playState = snapshot.data;
         final processingState = playState?.processingState;
         final playing = playState?.playing;
-        if (processingState == ProcessingState.loading ||
-            processingState == ProcessingState.buffering) {
+        if (processingState == ProcessingState.loading || processingState == ProcessingState.buffering) {
           // todo: pause animation
           _pauseRotationAnim();
 
@@ -324,8 +317,26 @@ class _NowPlayingPageState extends State<NowPlayingPage>
     );
   }
 
+  void _setShuffle() {
+    setState(() {
+      _isShuffle = !_isShuffle;
+    });
+  }
+
+  Color? _getShuffleColor() {
+    return _isShuffle ? Colors.deepPurple : Colors.grey;
+  }
+
   void _setNextSong() {
-    ++_selectedItemIndex;
+    if (_isShuffle) {
+      var random = Random();
+      _selectedItemIndex = random.nextInt(widget.songs.length);
+    } else {
+      ++_selectedItemIndex;
+    }
+    if (_selectedItemIndex >= widget.songs.length) {
+      _selectedItemIndex = _selectedItemIndex % widget.songs.length;
+    }
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
     _resetRotationAnim();
@@ -336,7 +347,15 @@ class _NowPlayingPageState extends State<NowPlayingPage>
   }
 
   void _setPrevSong() {
-    --_selectedItemIndex;
+    if (_isShuffle) {
+      var random = Random();
+      _selectedItemIndex = random.nextInt(widget.songs.length);
+    } else {
+      --_selectedItemIndex;
+    }
+    if (_selectedItemIndex < 0) {
+      _selectedItemIndex = (-1 * _selectedItemIndex) % widget.songs.length;
+    }
     final nextSong = widget.songs[_selectedItemIndex];
     _audioPlayerManager.updateSongUrl(nextSong.source);
     _resetRotationAnim();
