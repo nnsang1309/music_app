@@ -39,7 +39,8 @@ class NowPlayingPage extends StatefulWidget {
   State<NowPlayingPage> createState() => _NowPlayingPageState();
 }
 
-class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProviderStateMixin {
+class _NowPlayingPageState extends State<NowPlayingPage>
+    with SingleTickerProviderStateMixin {
   late AnimationController _imageAnimController;
   late AudioPlayerManager _audioPlayerManager;
 
@@ -50,7 +51,8 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
       vsync: this,
       duration: const Duration(milliseconds: 120000),
     );
-    _audioPlayerManager = AudioPlayerManager(songUrl: widget.playingSong.source);
+    _audioPlayerManager =
+        AudioPlayerManager(songUrl: widget.playingSong.source);
     _audioPlayerManager.init();
   }
 
@@ -88,7 +90,8 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
 
                 // ---- Anh bai hat xoay vong
                 RotationTransition(
-                  turns: Tween(begin: 0.0, end: 1.0).animate(_imageAnimController),
+                  turns:
+                      Tween(begin: 0.0, end: 1.0).animate(_imageAnimController),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(radius),
                     child: FadeInImage.assetNetwork(
@@ -128,7 +131,11 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(color: Theme.of(context).textTheme.bodyMedium!.color),
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .color),
                             ),
                             const SizedBox(height: 8),
                             Text(
@@ -136,7 +143,11 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium!
-                                  .copyWith(color: Theme.of(context).textTheme.bodyMedium!.color),
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium!
+                                          .color),
                             ),
                           ],
                         ),
@@ -174,16 +185,43 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
         ));
   }
 
+  // fix loi chồng lấn bài hát
+  @override
+  void dispose() {
+    _audioPlayerManager.dispose();
+    super.dispose();
+  }
+
   Widget _mediaButtons() {
     return SizedBox(
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-           MediaButtonControl(function: null, icon: Icons.shuffle, color: Colors.purple, size: 24),
-           MediaButtonControl(function: null, icon: Icons.skip_previous, color: Colors.purple, size: 36),
+          const MediaButtonControl(
+            function: null,
+            icon: Icons.shuffle,
+            color: Colors.purple,
+            size: 24,
+          ),
+          const MediaButtonControl(
+            function: null,
+            icon: Icons.skip_previous,
+            color: Colors.purple,
+            size: 36,
+          ),
           _playButton(),
-           MediaButtonControl(function: null, icon: Icons.skip_next, color: Colors.purple, size: 36),
-           MediaButtonControl(function: null, icon: Icons.repeat, color: Colors.purple, size: 24),
+          const MediaButtonControl(
+            function: null,
+            icon: Icons.skip_next,
+            color: Colors.purple,
+            size: 36,
+          ),
+          const MediaButtonControl(
+            function: null,
+            icon: Icons.repeat,
+            color: Colors.purple,
+            size: 24,
+          ),
         ],
       ),
     );
@@ -200,6 +238,16 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
           return ProgressBar(
             progress: progress,
             total: total,
+            buffered: buffered,
+            onSeek: _audioPlayerManager.player.seek,
+            barHeight: 5.0,
+            barCapShape: BarCapShape.round,
+            baseBarColor: Colors.grey.withOpacity(0.3),
+            progressBarColor: Colors.green,
+            bufferedBarColor: Colors.grey.withOpacity(0.3),
+            thumbColor: Colors.deepPurple,
+            thumbGlowColor: Colors.green.withOpacity(0.3),
+            thumbRadius: 10.0,
           );
         });
   }
@@ -211,7 +259,8 @@ class _NowPlayingPageState extends State<NowPlayingPage> with SingleTickerProvid
         final playState = snapshot.data;
         final processingState = playState?.processingState;
         final playing = playState?.playing;
-        if (processingState == ProcessingState.loading || processingState == ProcessingState.buffering) {
+        if (processingState == ProcessingState.loading ||
+            processingState == ProcessingState.buffering) {
           return Container(
             margin: const EdgeInsets.all(8),
             width: 48,
